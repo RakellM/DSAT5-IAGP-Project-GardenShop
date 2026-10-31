@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garden Shop | Inventory & Restocking Decision Support System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .badge-p1 { background-color: #FEE2E2; color: #991B1B; border: 1px solid #F87171; }
+    .badge-p2 { background-color: #FEF3C7; color: #92400E; border: 1px solid #FBBF24; }
+    .badge-p3 { background-color: #DBEAFE; color: #1E40AF; border: 1px solid #60A5FA; }
+    .badge-p4 { background-color: #F3F4F6; color: #4B5563; border: 1px solid #D1D5DB; }
+    .badge-p5 { background-color: #D1FAE5; color: #065F46; border: 1px solid #34D399; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- TOP HEADER -->
+  <header class="bg-[#1B365D] text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="bg-emerald-500 text-white p-2 rounded-lg font-bold text-lg leading-none shadow-sm">🌿</div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight">Garden Shop | Inventory & Restocking DSS</h1>
+          <p class="text-xs text-slate-300">Operational Triage, Demand Velocity & Purchasing Optimization</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Live GitHub Pages Deployable
+        </span>
+        <button id="exportCsvBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded shadow transition flex items-center gap-1.5">
+          <span>📥</span> Export PO Manifest (CSV)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- GLOBAL FILTER RIBBON -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+          <!-- Search -->
+          <div class="relative min-w-[200px] flex-1 sm:flex-initial">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search SKU, category, vendor..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+          </div>
+
+          <!-- Category Slicer -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <label for="categoryFilter" class="font-semibold text-slate-600">Category:</label>
+            <select id="categoryFilter" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="ALL">All Categories (8)</option>
+            </select>
+          </div>
+
+          <!-- Supplier Slicer -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <label for="supplierFilter" class="font-semibold text-slate-600">Supplier:</label>
+            <select id="supplierFilter" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="ALL">All Suppliers (6)</option>
+            </select>
+          </div>
+
+          <!-- Priority Filter -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <label for="priorityFilter" class="font-semibold text-slate-600">Priority:</label>
+            <select id="priorityFilter" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="ALL">All Priorities</option>
+              <option value="P1">P1 - Urgent Action (Stockout / Top Seller)</option>
+              <option value="P2">P2 - Restock Scheduled</option>
+              <option value="P3">P3 - Watchlist (Near ROP)</option>
+              <option value="P5">P5 - Healthy Inventory</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Discontinued Switch & Reset -->
+        <div class="flex items-center space-x-4 text-xs font-medium">
+          <label class="inline-flex items-center cursor-pointer select-none">
+            <input type="checkbox" id="showDiscontinuedToggle" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+            <span class="ml-2 text-slate-700">Show Discontinued</span>
+          </label>
+          <button id="resetFiltersBtn" class="text-blue-600 hover:text-blue-800 font-semibold underline text-xs">
+            Reset Filters
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI SCORECARDS (DYNAMICALLY RECALCULATED ON ACTIVE FILTER) -->
+    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <!-- Card 1: Inventory Health -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Inventory Health</span>
+        <div class="my-1 flex items-baseline justify-between">
+          <span id="kpiHealthPct" class="text-2xl font-black text-slate-800">78.3%</span>
+          <span id="kpiHealthBadge" class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800">Target >90%</span>
+        </div>
+        <span id="kpiHealthSub" class="text-[11px] text-slate-500">18 of 23 active SKUs safe</span>
+      </div>
+
+      <!-- Card 2: Stockouts -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Critical Stockouts</span>
+        <div class="my-1 flex items-baseline justify-between">
+          <span id="kpiZeroStock" class="text-2xl font-black text-red-600">1 SKU</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-red-100 text-red-700">P1 Urgent</span>
+        </div>
+        <span id="kpiZeroStockSub" class="text-[11px] text-slate-500">Hanging Basket (0 units)</span>
+      </div>
+
+      <!-- Card 3: Below Reorder Point -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Under Reorder Point</span>
+        <div class="my-1 flex items-baseline justify-between">
+          <span id="kpiUnderstocked" class="text-2xl font-black text-amber-600">5 SKUs</span>
+          <span id="kpiDeficitUnits" class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800">60 units deficit</span>
+        </div>
+        <span class="text-[11px] text-slate-500">Needs PO generation</span>
+      </div>
+
+      <!-- Card 4: Restock Capital Needed -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Reorder Capital to Min</span>
+        <div class="my-1 flex items-baseline justify-between">
+          <span id="kpiCapitalNeeded" class="text-2xl font-black text-blue-700">$152.00</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-blue-100 text-blue-800">Target PO: $383</span>
+        </div>
+        <span class="text-[11px] text-slate-500">Low working capital barrier</span>
+      </div>
+
+      <!-- Card 5: Active Stock Cost Valuation -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active Stock Cost</span>
+        <div class="my-1 flex items-baseline justify-between">
+          <span id="kpiActiveCost" class="text-2xl font-black text-slate-800">$4,731.00</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800">933 units</span>
+        </div>
+        <span id="kpiRetailVal" class="text-[11px] text-slate-500">Retail: $10,321.25 (54% margin)</span>
+      </div>
+
+      <!-- Card 6: Revenue at Risk -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Revenue at Risk</span>
+        <div class="my-1 flex items-baseline justify-between">
+          <span id="kpiRevAtRisk" class="text-2xl font-black text-rose-600">$71.00</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-rose-100 text-rose-700">Top Sellers</span>
+        </div>
+        <span class="text-[11px] text-slate-500">Pothos & Tomato Seeds</span>
+      </div>
+    </section>
+
+    <!-- OPERATIONAL ALERTS BANNER -->
+    <div id="vendorAlertBox" class="bg-amber-50 border-l-4 border-amber-500 p-3.5 rounded-r-lg shadow-sm flex items-start justify-between">
+      <div class="flex items-start space-x-2.5">
+        <span class="text-amber-600 text-lg">⚠️</span>
+        <div class="text-xs text-amber-900 leading-relaxed">
+          <strong class="font-bold">Procurement Alert:</strong> 
+          Supplier <span class="font-semibold underline">Ironwood Tools</span> supplies <em>Hand Cultivator</em> (deficit: 7 units, $24.50), but has <strong>no email registered in the database</strong>. Orders must be submitted via alternative channel or telephone.
+        </div>
+      </div>
+      <button onclick="document.getElementById('vendorAlertBox').style.display='none'" class="text-amber-700 hover:text-amber-900 text-sm font-bold ml-4">✕</button>
+    </div>
+
+    <!-- VISUAL DIAGNOSTIC CHARTS -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Chart 1: Stock Health by Category -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Inventory Health by Category</h2>
+          <span class="text-[11px] text-slate-400">Stacked SKU Status</span>
+        </div>
+        <div class="h-64 relative">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Priority Scatter Plot (Stock vs Sales) -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Stock Availability vs. Sales Demand Velocity</h2>
+          <span class="text-[11px] text-slate-400">Quadrant Prioritization</span>
+        </div>
+        <div class="h-64 relative">
+          <canvas id="scatterChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Supplier Restock Capital & Shortage -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Supplier Restock Capital Requirements</h2>
+          <span class="text-[11px] text-slate-400">Capital to Min ROP ($ USD)</span>
+        </div>
+        <div class="h-60 relative">
+          <canvas id="supplierChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Component 4: Discontinued Product Clearance Drawer -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-2.5">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Discontinued Inventory Clearance Drawer</h2>
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">Rule 2 Compliance</span>
+          </div>
+          <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+            Per core business rules, discontinued items must <strong>never be automatically reordered</strong> even when below reorder levels. They are quarantined here to monitor working capital recovery:
+          </p>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="font-bold text-xs text-slate-800">Bird Feeder (SKU #24)</span>
+                <span class="text-[11px] text-slate-500 block">Category: Outdoor Decor | Supplier: Ironwood Tools</span>
+              </div>
+              <span class="badge-p4 text-[10px] font-bold px-2 py-0.5 rounded">Discontinued</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-[11px] pt-1 border-t border-slate-200">
+              <div><span class="text-slate-400 block">On Hand:</span> <strong class="text-slate-700">4 units</strong></div>
+              <div><span class="text-slate-400 block">Cost Value:</span> <strong class="text-slate-700">$32.00</strong></div>
+              <div><span class="text-slate-400 block">Retail Value:</span> <strong class="text-slate-700">$68.00</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 p-2.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between text-xs">
+          <span class="text-blue-800">💡 <strong>Action:</strong> Run a 25% clearance promotion to liquidate remaining $32.00 capital.</span>
+          <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-2.5 py-1 rounded text-[11px] transition" onclick="alert('Clearance promotion flagged for Bird Feeder (SKU #24)')">
+            Create Clearance Deal
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- OPERATIONAL RESTOCK ACTION WORKBENCH (INTERACTIVE TABLE) -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-800">Operational Restock Action Workbench</h2>
+          <p class="text-xs text-slate-500">Live decision grid with priority ranking, replenishment targets, and vendor action links</p>
+        </div>
+        <div class="text-xs text-slate-500">
+          Showing <span id="tableRowCount" class="font-bold text-slate-800">23</span> items
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-100 text-slate-600 uppercase text-[10px] tracking-wider font-semibold border-b border-slate-200">
+              <th class="py-3 px-3 cursor-pointer hover:bg-slate-200" onclick="sortTable('product_id')">ID ↕</th>
+              <th class="py-3 px-4 cursor-pointer hover:bg-slate-200" onclick="sortTable('product_name')">Product Name ↕</th>
+              <th class="py-3 px-3 cursor-pointer hover:bg-slate-200" onclick="sortTable('category_name')">Category ↕</th>
+              <th class="py-3 px-3 cursor-pointer hover:bg-slate-200" onclick="sortTable('supplier_name')">Supplier ↕</th>
+              <th class="py-3 px-3 text-right cursor-pointer hover:bg-slate-200" onclick="sortTable('price')">Price ↕</th>
+              <th class="py-3 px-3 text-right cursor-pointer hover:bg-slate-200" onclick="sortTable('quantity_on_hand')">On Hand ↕</th>
+              <th class="py-3 px-3 text-right cursor-pointer hover:bg-slate-200" onclick="sortTable('reorder_level')">ROP ↕</th>
+              <th class="py-3 px-3 text-right cursor-pointer hover:bg-slate-200 font-bold" onclick="sortTable('deficit_to_min')">Deficit ↕</th>
+              <th class="py-3 px-3 text-right cursor-pointer hover:bg-slate-200 font-bold" onclick="sortTable('cost_to_min')">Cost to Min ↕</th>
+              <th class="py-3 px-3 text-right cursor-pointer hover:bg-slate-200" onclick="sortTable('suggested_po_units')">Target PO ↕</th>
+              <th class="py-3 px-3 text-center cursor-pointer hover:bg-slate-200" onclick="sortTable('units_sold')">Units Sold ↕</th>
+              <th class="py-3 px-3 text-center cursor-pointer hover:bg-slate-200" onclick="sortTable('priority_tier')">Priority ↕</th>
+              <th class="py-3 px-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="workbenchTableBody" class="divide-y divide-slate-100 font-normal">
+            <!-- Dynamically populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- EMBEDDED DATA PAYLOAD (Fallback for local file:// execution & standalone bundling) -->
+  <script id="embedded-data" type="application/json">
+{
+  "kpis": {
+    "total_skus": 24,
+    "active_skus": 23,
+    "discontinued_skus": 1,
+    "active_units_on_hand": 933,
+    "active_stock_cost_value": 4731.0,
+    "active_stock_retail_value": 10321.25,
+    "discontinued_cost_value": 32.0,
+    "zero_stock_skus": 1,
+    "understocked_skus": 5,
+    "healthy_skus": 18,
+    "total_units_deficit": 60,
+    "total_capital_to_rop": 152.0,
+    "target_po_capital": 383.0,
+    "inventory_health_pct": 78.3,
+    "potential_margin_pct": 54.2,
+    "valid_orders": 23,
+    "total_units_sold": 86,
+    "total_gross_revenue": 1107.0,
+    "total_gross_profit": 583.0,
+    "realized_margin_pct": 52.66
+  },
+  "categories": [
+    { "category_id": 1, "category_name": "Houseplants", "total_products": 5, "total_units": 147, "cost_value": 1747.0, "retail_value": 3374.0, "out_of_stock": 0, "low_stock": 1, "healthy_stock": 4 },
+    { "category_id": 4, "category_name": "Pots & Planters", "total_products": 3, "total_units": 112, "cost_value": 401.0, "retail_value": 1003.0, "out_of_stock": 1, "low_stock": 0, "healthy_stock": 2 },
+    { "category_id": 2, "category_name": "Seeds & Bulbs", "total_products": 3, "total_units": 325, "cost_value": 664.5, "retail_value": 1673.75, "out_of_stock": 0, "low_stock": 1, "healthy_stock": 2 },
+    { "category_id": 3, "category_name": "Tools", "total_products": 3, "total_units": 81, "cost_value": 448.5, "retail_value": 990.0, "out_of_stock": 0, "low_stock": 1, "healthy_stock": 2 },
+    { "category_id": 7, "category_name": "Fertilizer", "total_products": 2, "total_units": 46, "cost_value": 264.0, "retail_value": 594.0, "out_of_stock": 0, "low_stock": 1, "healthy_stock": 1 },
+    { "category_id": 5, "category_name": "Soil & Compost", "total_products": 3, "total_units": 143, "cost_value": 599.0, "retail_value": 1365.0, "out_of_stock": 0, "low_stock": 0, "healthy_stock": 3 },
+    { "category_id": 6, "category_name": "Watering", "total_products": 2, "total_units": 45, "cost_value": 351.0, "retail_value": 780.0, "out_of_stock": 0, "low_stock": 0, "healthy_stock": 2 },
+    { "category_id": 8, "category_name": "Outdoor Decor", "total_products": 3, "total_units": 34, "cost_value": 256.0, "retail_value": 541.5, "out_of_stock": 0, "low_stock": 0, "healthy_stock": 2 }
+  ],
+  "suppliers": [
+    { "supplier_id": 4, "supplier_name": "SunGrow Nurseries", "contact_email": "sales@sungrow.example", "state": "FL", "active_skus_supplied": 4, "restock_skus": 2, "units_deficit": 8, "capital_needed": 36.0 },
+    { "supplier_id": 2, "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "state": "OH", "active_skus_supplied": 6, "restock_skus": 1, "units_deficit": 10, "capital_needed": 60.0 },
+    { "supplier_id": 6, "supplier_name": "Bloomfield Seeds", "contact_email": "contact@bloomfield.example", "state": "OR", "active_skus_supplied": 3, "restock_skus": 1, "units_deficit": 35, "capital_needed": 31.5 },
+    { "supplier_id": 5, "supplier_name": "Ironwood Tools", "contact_email": "MISSING", "state": "PA", "active_skus_supplied": 4, "restock_skus": 1, "units_deficit": 7, "capital_needed": 24.5 },
+    { "supplier_id": 1, "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "state": "CA", "active_skus_supplied": 6, "restock_skus": 0, "units_deficit": 0, "capital_needed": 0.0 },
+    { "supplier_id": 3, "supplier_name": "RootWorks Supply", "contact_email": "MISSING", "state": "PA", "active_skus_supplied": 0, "restock_skus": 0, "units_deficit": 0, "capital_needed": 0.0 }
+  ],
+  "products": [
+    { "product_id": 14, "product_name": "Hanging Basket", "category_name": "Pots & Planters", "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "price": 14.0, "cost": 6.0, "quantity_on_hand": 0, "reorder_level": 10, "discontinued": 0, "units_sold": 0, "gross_revenue": 0.0, "order_count": 0, "deficit_to_min": 10, "cost_to_min": 60.0, "suggested_po_units": 20, "suggested_po_cost": 120.0, "margin_pct": 57.1, "priority_tier": "P1: Critical Stockout", "health_status": "Out of Stock" },
+    { "product_id": 4, "product_name": "Pothos 'Golden'", "category_name": "Houseplants", "supplier_name": "SunGrow Nurseries", "contact_email": "sales@sungrow.example", "price": 12.0, "cost": 5.0, "quantity_on_hand": 8, "reorder_level": 12, "discontinued": 0, "units_sold": 5, "gross_revenue": 60.0, "order_count": 2, "deficit_to_min": 4, "cost_to_min": 20.0, "suggested_po_units": 16, "suggested_po_cost": 80.0, "margin_pct": 58.3, "priority_tier": "P1: Top Seller at Risk", "health_status": "Low Stock" },
+    { "product_id": 7, "product_name": "Tomato Seeds 'Roma'", "category_name": "Seeds & Bulbs", "supplier_name": "Bloomfield Seeds", "contact_email": "contact@bloomfield.example", "price": 2.75, "cost": 0.9, "quantity_on_hand": 5, "reorder_level": 40, "discontinued": 0, "units_sold": 4, "gross_revenue": 11.0, "order_count": 1, "deficit_to_min": 35, "cost_to_min": 31.5, "suggested_po_units": 75, "suggested_po_cost": 67.5, "margin_pct": 67.3, "priority_tier": "P1: Top Seller at Risk", "health_status": "Low Stock" },
+    { "product_id": 11, "product_name": "Hand Cultivator", "category_name": "Tools", "supplier_name": "Ironwood Tools", "contact_email": "", "price": 8.0, "cost": 3.5, "quantity_on_hand": 3, "reorder_level": 10, "discontinued": 0, "units_sold": 2, "gross_revenue": 16.0, "order_count": 1, "deficit_to_min": 7, "cost_to_min": 24.5, "suggested_po_units": 17, "suggested_po_cost": 59.5, "margin_pct": 56.3, "priority_tier": "P2: Restock Required", "health_status": "Low Stock" },
+    { "product_id": 20, "product_name": "Orchid Food", "category_name": "Fertilizer", "supplier_name": "SunGrow Nurseries", "contact_email": "sales@sungrow.example", "price": 9.0, "cost": 4.0, "quantity_on_hand": 6, "reorder_level": 10, "discontinued": 0, "units_sold": 2, "gross_revenue": 18.0, "order_count": 1, "deficit_to_min": 4, "cost_to_min": 16.0, "suggested_po_units": 14, "suggested_po_cost": 56.0, "margin_pct": 55.6, "priority_tier": "P2: Restock Required", "health_status": "Low Stock" },
+    { "product_id": 1, "product_name": "Fiddle-Leaf Fig", "category_name": "Houseplants", "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "price": 32.0, "cost": 18.0, "quantity_on_hand": 14, "reorder_level": 10, "discontinued": 0, "units_sold": 5, "gross_revenue": 160.0, "order_count": 4, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 43.8, "priority_tier": "P3: Watchlist", "health_status": "Healthy" },
+    { "product_id": 22, "product_name": "Solar Lantern", "category_name": "Outdoor Decor", "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "price": 18.5, "cost": 9.0, "quantity_on_hand": 9, "reorder_level": 8, "discontinued": 0, "units_sold": 3, "gross_revenue": 55.5, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 51.4, "priority_tier": "P3: Watchlist", "health_status": "Healthy" },
+    { "product_id": 23, "product_name": "Cactus Mix Soil", "category_name": "Soil & Compost", "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "price": 9.0, "cost": 4.0, "quantity_on_hand": 20, "reorder_level": 15, "discontinued": 0, "units_sold": 1, "gross_revenue": 9.0, "order_count": 1, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 55.6, "priority_tier": "P3: Watchlist", "health_status": "Healthy" },
+    { "product_id": 6, "product_name": "Sunflower Seeds", "category_name": "Seeds & Bulbs", "supplier_name": "Bloomfield Seeds", "contact_email": "contact@bloomfield.example", "price": 3.5, "cost": 1.2, "quantity_on_hand": 200, "reorder_level": 50, "discontinued": 0, "units_sold": 12, "gross_revenue": 42.0, "order_count": 3, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 65.7, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 12, "product_name": "Terracotta Pot 8in", "category_name": "Pots & Planters", "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "price": 6.5, "cost": 2.5, "quantity_on_hand": 90, "reorder_level": 25, "discontinued": 0, "units_sold": 9, "gross_revenue": 58.5, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 61.5, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 2, "product_name": "Monstera Deliciosa", "category_name": "Houseplants", "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "price": 28.0, "cost": 15.0, "quantity_on_hand": 40, "reorder_level": 15, "discontinued": 0, "units_sold": 5, "gross_revenue": 140.0, "order_count": 4, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 46.4, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 3, "product_name": "Snake Plant", "category_name": "Houseplants", "supplier_name": "SunGrow Nurseries", "contact_email": "sales@sungrow.example", "price": 18.0, "cost": 9.0, "quantity_on_hand": 55, "reorder_level": 20, "discontinued": 0, "units_sold": 5, "gross_revenue": 90.0, "order_count": 3, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 50.0, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 8, "product_name": "Tulip Bulbs (10pk)", "category_name": "Seeds & Bulbs", "supplier_name": "Bloomfield Seeds", "contact_email": "contact@bloomfield.example", "price": 8.0, "cost": 3.5, "quantity_on_hand": 120, "reorder_level": 30, "discontinued": 0, "units_sold": 5, "gross_revenue": 40.0, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 56.3, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 15, "product_name": "Potting Soil 20L", "category_name": "Soil & Compost", "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "price": 11.0, "cost": 5.0, "quantity_on_hand": 75, "reorder_level": 20, "discontinued": 0, "units_sold": 5, "gross_revenue": 55.0, "order_count": 3, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 54.5, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 16, "product_name": "Compost Mix 10L", "category_name": "Soil & Compost", "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "price": 7.5, "cost": 3.0, "quantity_on_hand": 48, "reorder_level": 20, "discontinued": 0, "units_sold": 5, "gross_revenue": 37.5, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 60.0, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 5, "product_name": "ZZ Plant", "category_name": "Houseplants", "supplier_name": "GreenLeaf Wholesale", "contact_email": "orders@greenleaf.example", "price": 24.0, "cost": 12.0, "quantity_on_hand": 30, "reorder_level": 10, "discontinued": 0, "units_sold": 3, "gross_revenue": 72.0, "order_count": 3, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 50.0, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 13, "product_name": "Ceramic Planter 'Sage'", "category_name": "Pots & Planters", "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "price": 19.0, "cost": 8.0, "quantity_on_hand": 22, "reorder_level": 10, "discontinued": 0, "units_sold": 3, "gross_revenue": 57.0, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 57.9, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 19, "product_name": "All-Purpose Fertilizer", "category_name": "Fertilizer", "supplier_name": "SunGrow Nurseries", "contact_email": "sales@sungrow.example", "price": 13.5, "cost": 6.0, "quantity_on_hand": 40, "reorder_level": 15, "discontinued": 0, "units_sold": 3, "gross_revenue": 40.5, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 55.6, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 10, "product_name": "Garden Trowel", "category_name": "Tools", "supplier_name": "Ironwood Tools", "contact_email": "", "price": 9.5, "cost": 4.0, "quantity_on_hand": 60, "reorder_level": 15, "discontinued": 0, "units_sold": 2, "gross_revenue": 19.0, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 57.9, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 17, "product_name": "Watering Can 2gal", "category_name": "Watering", "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "price": 16.0, "cost": 7.0, "quantity_on_hand": 33, "reorder_level": 10, "discontinued": 0, "units_sold": 2, "gross_revenue": 32.0, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 56.3, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 18, "product_name": "Drip Hose 25ft", "category_name": "Watering", "supplier_name": "Ironwood Tools", "contact_email": "", "price": 21.0, "cost": 10.0, "quantity_on_hand": 12, "reorder_level": 8, "discontinued": 0, "units_sold": 2, "gross_revenue": 42.0, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 52.4, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 21, "product_name": "Garden Gnome", "category_name": "Outdoor Decor", "supplier_name": "Terra Pots Co", "contact_email": "hello@terrapots.example", "price": 15.0, "cost": 7.0, "quantity_on_hand": 25, "reorder_level": 5, "discontinued": 0, "units_sold": 2, "gross_revenue": 30.0, "order_count": 2, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 53.3, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 9, "product_name": "Pruning Shears", "category_name": "Tools", "supplier_name": "Ironwood Tools", "contact_email": "", "price": 22.0, "cost": 11.0, "quantity_on_hand": 18, "reorder_level": 8, "discontinued": 0, "units_sold": 1, "gross_revenue": 22.0, "order_count": 1, "deficit_to_min": 0, "cost_to_min": 0.0, "suggested_po_units": 0, "suggested_po_cost": 0.0, "margin_pct": 50.0, "priority_tier": "P5: Healthy", "health_status": "Healthy" },
+    { "product_id": 24, "product_name": "Bird Feeder", "category_name": "Outdoor Decor", "supplier_name": "Ironwood Tools", "contact_email": "", "price": 17.0, "cost": 8.0, "quantity_on_hand": 4, "reorder_level": 6, "discontinued": 1, "units_sold": 0, "gross_revenue": 0.0, "order_count": 0, "deficit_to_min": 2, "cost_to_min": 16.0, "suggested_po_units": 8, "suggested_po_cost": 64.0, "margin_pct": 52.9, "priority_tier": "P4: Discontinued", "health_status": "Discontinued" }
+  ]
+}
+  </script>
+
+  <!-- DASHBOARD APPLICATION SCRIPT -->
+  <script>
+    let appData = null;
+    let filteredProducts = [];
+    let sortColumn = 'priority_tier';
+    let sortDirection = 'asc';
+
+    let categoryChart = null;
+    let scatterChart = null;
+    let supplierChart = null;
+
+    // Load Data
+    function initData() {
+      try {
+        const raw = document.getElementById('embedded-data').textContent;
+        appData = JSON.parse(raw);
+        setupFilters();
+        applyFilters();
+      } catch (err) {
+        console.error("Failed to parse embedded data:", err);
+      }
+    }
+
+    // Populate Category and Supplier Filter Options
+    function setupFilters() {
+      const catSelect = document.getElementById('categoryFilter');
+      appData.categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.category_name;
+        opt.textContent = `${c.category_name} (${c.total_products})`;
+        catSelect.appendChild(opt);
+      });
+
+      const supSelect = document.getElementById('supplierFilter');
+      appData.suppliers.forEach(s => {
+        if (s.supplier_name !== "RootWorks Supply") {
+          const opt = document.createElement('option');
+          opt.value = s.supplier_name;
+          opt.textContent = `${s.supplier_name} (${s.active_skus_supplied} SKUs)`;
+          supSelect.appendChild(opt);
+        }
+      });
+
+      // Bind events
+      document.getElementById('searchInput').addEventListener('input', applyFilters);
+      document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+      document.getElementById('supplierFilter').addEventListener('change', applyFilters);
+      document.getElementById('priorityFilter').addEventListener('change', applyFilters);
+      document.getElementById('showDiscontinuedToggle').addEventListener('change', applyFilters);
+      document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+      document.getElementById('exportCsvBtn').addEventListener('click', exportToCsv);
+    }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('categoryFilter').value = 'ALL';
+      document.getElementById('supplierFilter').value = 'ALL';
+      document.getElementById('priorityFilter').value = 'ALL';
+      document.getElementById('showDiscontinuedToggle').checked = false;
+      applyFilters();
+    }
+
+    // Filter Logic
+    function applyFilters() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const selectedCat = document.getElementById('categoryFilter').value;
+      const selectedSup = document.getElementById('supplierFilter').value;
+      const selectedPri = document.getElementById('priorityFilter').value;
+      const showDisc = document.getElementById('showDiscontinuedToggle').checked;
+
+      filteredProducts = appData.products.filter(p => {
+        // Discontinued filter
+        if (!showDisc && p.discontinued === 1) return false;
+
+        // Category filter
+        if (selectedCat !== 'ALL' && p.category_name !== selectedCat) return false;
+
+        // Supplier filter
+        if (selectedSup !== 'ALL' && p.supplier_name !== selectedSup) return false;
+
+        // Priority filter
+        if (selectedPri !== 'ALL') {
+          if (!p.priority_tier.startsWith(selectedPri)) return false;
+        }
+
+        // Search text
+        if (query) {
+          const matchName = p.product_name.toLowerCase().includes(query);
+          const matchCat = p.category_name.toLowerCase().includes(query);
+          const matchSup = p.supplier_name.toLowerCase().includes(query);
+          if (!matchName && !matchCat && !matchSup) return false;
+        }
+
+        return true;
+      });
+
+      sortData();
+      updateKPICards();
+      renderTable();
+      renderCharts();
+    }
+
+    // Sort Logic
+    function sortTable(col) {
+      if (sortColumn === col) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortColumn = col;
+        sortDirection = 'asc';
+      }
+      sortData();
+      renderTable();
+    }
+
+    function sortData() {
+      filteredProducts.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+        }
+
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // Recalculate KPIs based on filtered subset
+    function updateKPICards() {
+      const activeFiltered = filteredProducts.filter(p => p.discontinued === 0);
+      const totalActive = activeFiltered.length;
+      const zeroStock = activeFiltered.filter(p => p.quantity_on_hand === 0).length;
+      const lowStock = activeFiltered.filter(p => p.quantity_on_hand > 0 && p.quantity_on_hand < p.reorder_level).length;
+      const understocked = zeroStock + lowStock;
+      const healthy = activeFiltered.filter(p => p.quantity_on_hand >= p.reorder_level).length;
+
+      const healthPct = totalActive > 0 ? ((healthy / totalActive) * 100).toFixed(1) : "0.0";
+      const totalDeficitUnits = activeFiltered.reduce((sum, p) => sum + p.deficit_to_min, 0);
+      const totalCapitalNeeded = activeFiltered.reduce((sum, p) => sum + p.cost_to_min, 0);
+      const totalCostValuation = activeFiltered.reduce((sum, p) => sum + (p.quantity_on_hand * p.cost), 0);
+      const totalRetailValuation = activeFiltered.reduce((sum, p) => sum + (p.quantity_on_hand * p.price), 0);
+      const revAtRisk = activeFiltered
+        .filter(p => p.quantity_on_hand < p.reorder_level)
+        .reduce((sum, p) => sum + p.gross_revenue, 0);
+
+      document.getElementById('kpiHealthPct').textContent = `${healthPct}%`;
+      document.getElementById('kpiHealthSub').textContent = `${healthy} of ${totalActive} active SKUs safe`;
+      
+      const badge = document.getElementById('kpiHealthBadge');
+      if (parseFloat(healthPct) >= 90) {
+        badge.className = "text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800";
+        badge.textContent = "Safe Health";
+      } else {
+        badge.className = "text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800";
+        badge.textContent = "Attention Needed";
+      }
+
+      document.getElementById('kpiZeroStock').textContent = `${zeroStock} SKU${zeroStock !== 1 ? 's' : ''}`;
+      document.getElementById('kpiUnderstocked').textContent = `${understocked} SKU${understocked !== 1 ? 's' : ''}`;
+      document.getElementById('kpiDeficitUnits').textContent = `${totalDeficitUnits} units deficit`;
+      document.getElementById('kpiCapitalNeeded').textContent = `$${totalCapitalNeeded.toFixed(2)}`;
+      document.getElementById('kpiActiveCost').textContent = `$${totalCostValuation.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      document.getElementById('kpiRetailVal').textContent = `Retail: $${totalRetailValuation.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      document.getElementById('kpiRevAtRisk').textContent = `$${revAtRisk.toFixed(2)}`;
+    }
+
+    // Render Table Rows
+    function renderTable() {
+      const tbody = document.getElementById('workbenchTableBody');
+      tbody.innerHTML = '';
+      document.getElementById('tableRowCount').textContent = filteredProducts.length;
+
+      if (filteredProducts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-400 italic">No products match current filter selection.</td></tr>`;
+        return;
+      }
+
+      filteredProducts.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+        let priorityBadgeClass = "badge-p5";
+        if (p.priority_tier.includes("P1")) priorityBadgeClass = "badge-p1";
+        else if (p.priority_tier.includes("P2")) priorityBadgeClass = "badge-p2";
+        else if (p.priority_tier.includes("P3")) priorityBadgeClass = "badge-p3";
+        else if (p.priority_tier.includes("P4")) priorityBadgeClass = "badge-p4";
+
+        let stockClass = "text-slate-800 font-medium";
+        if (p.quantity_on_hand === 0) stockClass = "text-red-600 font-bold bg-red-50 px-1 rounded";
+        else if (p.quantity_on_hand < p.reorder_level) stockClass = "text-amber-700 font-bold";
+
+        const hasEmail = p.contact_email && p.contact_email !== 'MISSING';
+        const vendorDisplay = hasEmail ? 
+          `<span title="${p.contact_email}">${p.supplier_name}</span>` :
+          `<span class="text-amber-800 font-semibold" title="Missing Email!">${p.supplier_name} <span class="text-[10px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded">No Email</span></span>`;
+
+        const mailtoAction = p.deficit_to_min > 0 && hasEmail ? 
+          `<a href="mailto:${p.contact_email}?subject=Purchase%20Order%20-%20Garden%20Shop%20(${encodeURIComponent(p.product_name)})&body=Hello%20${encodeURIComponent(p.supplier_name)},%0A%0APlease%20accept%20our%20purchase%20order%20for%20the%20following%20item:%0A-%20Product:%20${encodeURIComponent(p.product_name)}%20(SKU%20${p.product_id})%0A-%20Quantity:%20${p.suggested_po_units}%20units%0A%0AThank%20you,%0AGarden%20Shop%20Procurement" class="inline-block bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-semibold px-2 py-0.5 rounded transition">Draft PO</a>` :
+          (p.deficit_to_min > 0 ? `<button onclick="alert('Please call ${p.supplier_name} via telephone to place this order (no contact email on file).')" class="inline-block bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-semibold px-2 py-0.5 rounded transition">Call Vendor</button>` : `<span class="text-slate-300 text-[11px]">--</span>`);
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-slate-400 font-mono">#${p.product_id}</td>
+          <td class="py-2.5 px-4 font-semibold text-slate-800">${p.product_name}</td>
+          <td class="py-2.5 px-3 text-slate-600">${p.category_name}</td>
+          <td class="py-2.5 px-3">${vendorDisplay}</td>
+          <td class="py-2.5 px-3 text-right font-mono">$${p.price.toFixed(2)}</td>
+          <td class="py-2.5 px-3 text-right font-mono ${stockClass}">${p.quantity_on_hand}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-slate-500">${p.reorder_level}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold ${p.deficit_to_min > 0 ? 'text-red-600' : 'text-slate-400'}">${p.deficit_to_min > 0 ? p.deficit_to_min : '-'}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold ${p.cost_to_min > 0 ? 'text-slate-900' : 'text-slate-400'}">${p.cost_to_min > 0 ? '$' + p.cost_to_min.toFixed(2) : '-'}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-blue-700 font-semibold">${p.suggested_po_units > 0 ? p.suggested_po_units + ' ($' + p.suggested_po_cost.toFixed(0) + ')' : '-'}</td>
+          <td class="py-2.5 px-3 text-center font-mono font-medium">${p.units_sold}</td>
+          <td class="py-2.5 px-3 text-center"><span class="${priorityBadgeClass} text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">${p.priority_tier}</span></td>
+          <td class="py-2.5 px-3 text-center">${mailtoAction}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Render Charts
+    function renderCharts() {
+      renderCategoryChart();
+      renderScatterChart();
+      renderSupplierChart();
+    }
+
+    function renderCategoryChart() {
+      const ctx = document.getElementById('categoryChart').getContext('2d');
+      if (categoryChart) categoryChart.destroy();
+
+      const catMap = {};
+      appData.categories.forEach(c => {
+        catMap[c.category_name] = { outOfStock: 0, lowStock: 0, healthy: 0 };
+      });
+
+      filteredProducts.filter(p => p.discontinued === 0).forEach(p => {
+        if (!catMap[p.category_name]) catMap[p.category_name] = { outOfStock: 0, lowStock: 0, healthy: 0 };
+        if (p.quantity_on_hand === 0) catMap[p.category_name].outOfStock++;
+        else if (p.quantity_on_hand < p.reorder_level) catMap[p.category_name].lowStock++;
+        else catMap[p.category_name].healthy++;
+      });
+
+      const labels = Object.keys(catMap);
+      const outData = labels.map(l => catMap[l].outOfStock);
+      const lowData = labels.map(l => catMap[l].lowStock);
+      const okData = labels.map(l => catMap[l].healthy);
+
+      categoryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Out of Stock (Zero)', data: outData, backgroundColor: '#EF4444' },
+            { label: 'Below Reorder Point', data: lowData, backgroundColor: '#F59E0B' },
+            { label: 'Adequate Stock', data: okData, backgroundColor: '#10B981' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } }
+          },
+          scales: {
+            x: { stacked: true, ticks: { font: { size: 9 }, maxRotation: 30 } },
+            y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    function renderScatterChart() {
+      const ctx = document.getElementById('scatterChart').getContext('2d');
+      if (scatterChart) scatterChart.destroy();
+
+      const points = filteredProducts.map(p => ({
+        x: p.units_sold,
+        y: p.quantity_on_hand,
+        product: p.product_name,
+        rop: p.reorder_level,
+        tier: p.priority_tier
+      }));
+
+      const colorMap = {
+        'P1: Critical Stockout': '#EF4444',
+        'P1: Top Seller at Risk': '#DC2626',
+        'P2: Restock Required': '#F59E0B',
+        'P3: Watchlist': '#2563EB',
+        'P5: Healthy': '#10B981',
+        'P4: Discontinued': '#9CA3AF'
+      };
+
+      scatterChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Catalog SKUs',
+            data: points,
+            pointBackgroundColor: points.map(pt => colorMap[pt.tier] || '#6B7280'),
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const pt = context.raw;
+                  return `${pt.product} | Stock: ${pt.y} (ROP: ${pt.rop}) | Sold: ${pt.x} units | [${pt.tier}]`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Historical Units Sold (Excl. Cancelled)', font: { size: 10 } } },
+            y: { title: { display: true, text: 'Current Stock on Hand (Units)', font: { size: 10 } }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function renderSupplierChart() {
+      const ctx = document.getElementById('supplierChart').getContext('2d');
+      if (supplierChart) supplierChart.destroy();
+
+      const supMap = {};
+      filteredProducts.filter(p => p.discontinued === 0 && p.quantity_on_hand < p.reorder_level).forEach(p => {
+        if (!supMap[p.supplier_name]) supMap[p.supplier_name] = { capital: 0, deficit: 0 };
+        supMap[p.supplier_name].capital += p.cost_to_min;
+        supMap[p.supplier_name].deficit += p.deficit_to_min;
+      });
+
+      const labels = Object.keys(supMap);
+      const capData = labels.map(l => supMap[l].capital);
+
+      supplierChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.length > 0 ? labels : ['No Restocks Under Current Filter'],
+          datasets: [{
+            label: 'Restock Capital to Min ROP ($ USD)',
+            data: labels.length > 0 ? capData : [0],
+            backgroundColor: '#1B365D',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (c) => `Capital Needed: $${c.raw.toFixed(2)}`
+              }
+            }
+          },
+          scales: {
+            x: { beginAtZero: true, title: { display: true, text: 'Capital Required ($ USD)', font: { size: 10 } } },
+            y: { ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // Export to CSV Functionality
+    function exportToCsv() {
+      const headers = ["Product_ID", "Product_Name", "Category", "Supplier", "Contact_Email", "Price", "Cost", "Stock_On_Hand", "Reorder_Level", "Deficit_To_Min", "Cost_To_Min", "Suggested_PO_Units", "Suggested_PO_Cost", "Units_Sold", "Priority_Tier"];
+      const rows = filteredProducts.map(p => [
+        p.product_id,
+        `"${p.product_name.replace(/"/g, '""')}"`,
+        `"${p.category_name}"`,
+        `"${p.supplier_name}"`,
+        `"${p.contact_email}"`,
+        p.price,
+        p.cost,
+        p.quantity_on_hand,
+        p.reorder_level,
+        p.deficit_to_min,
+        p.cost_to_min,
+        p.suggested_po_units,
+        p.suggested_po_cost,
+        p.units_sold,
+        `"${p.priority_tier}"`
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Garden_Shop_PO_Manifest_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Run on page load
+    window.addEventListener('DOMContentLoaded', initData);
+  </script>
+</body>
+</html>
