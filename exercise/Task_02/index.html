@@ -18,6 +18,14 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" style="display:flex; position:fixed; inset:0; background:rgba(248,250,252,0.92); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
+    <div style="width:48px; height:48px; border:5px solid #e2e8f0; border-top-color:#1B365D; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+    <p style="color:#1B365D; font-weight:600; font-size:14px;">Loading dashboard data…</p>
+    <p style="color:#94a3b8; font-size:11px;">Fetching <code>dashboard_data.json</code></p>
+  </div>
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
   <!-- TOP HEADER -->
   <header class="bg-[#1B365D] text-white shadow-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
@@ -30,8 +38,9 @@
       </div>
       <div class="flex items-center space-x-3">
         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-          <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Live GitHub Pages Deployable
+          <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Live Data via dashboard_data.json
         </span>
+        <span id="dataTimestamp" class="hidden text-xs text-slate-400"></span>
         <button id="exportCsvBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded shadow transition flex items-center gap-1.5">
           <span>📥</span> Export PO Manifest (CSV)
         </button>
@@ -366,16 +375,67 @@
     let scatterChart = null;
     let supplierChart = null;
 
-    // Load Data
-    function initData() {
-      try {
-        const raw = document.getElementById('embedded-data').textContent;
-        appData = JSON.parse(raw);
-        setupFilters();
-        applyFilters();
-      } catch (err) {
-        console.error("Failed to parse embedded data:", err);
+    // Show/hide loading overlay
+    function showLoading(visible) {
+      const el = document.getElementById('loadingOverlay');
+      if (el) el.style.display = visible ? 'flex' : 'none';
+    }
+
+    function showError(message) {
+      const el = document.getElementById('loadingOverlay');
+      if (el) {
+        el.innerHTML = `
+          <div class="text-center p-8 bg-white rounded-xl shadow max-w-sm">
+            <div class="text-4xl mb-3">⚠️</div>
+            <h2 class="text-red-700 font-bold text-lg mb-2">Failed to Load Dashboard Data</h2>
+            <p class="text-slate-600 text-sm mb-4">${message}</p>
+            <p class="text-slate-400 text-xs">Make sure <code class="bg-slate-100 px-1 rounded">dashboard_data.json</code> is in the same folder as this HTML file.</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-blue-500 transition">↺ Retry</button>
+          </div>`;
+        el.style.display = 'flex';
       }
+    }
+
+    // Dynamic data loader — fetches dashboard_data.json at runtime
+    function initData() {
+      showLoading(true);
+
+      // Attempt dynamic fetch first (works on a server / GitHub Pages)
+      fetch('dashboard_data.json')
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          return response.json();
+        })
+        .then(data => {
+          appData = data;
+          showLoading(false);
+          // Show data timestamp in header if available
+          if (data.generated_at) {
+            const ts = document.getElementById('dataTimestamp');
+            if (ts) {
+              const d = new Date(data.generated_at);
+              ts.textContent = `Data as of ${d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})} ${d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', timeZoneName:'short'})}`;
+              ts.classList.remove('hidden');
+            }
+          }
+          setupFilters();
+          applyFilters();
+        })
+        .catch(fetchErr => {
+          // Fallback: try reading from embedded <script> tag (local file:// access)
+          console.warn('fetch() failed (likely file:// protocol):', fetchErr.message, '— trying embedded data fallback.');
+          try {
+            const embeddedEl = document.getElementById('embedded-data');
+            if (!embeddedEl) throw new Error('No embedded-data element found.');
+            appData = JSON.parse(embeddedEl.textContent);
+            showLoading(false);
+            setupFilters();
+            applyFilters();
+          } catch (embeddedErr) {
+            console.error('Embedded data fallback also failed:', embeddedErr);
+            showError(`Could not load dashboard_data.json (${fetchErr.message}) and no embedded fallback was found.`);
+          }
+        });
     }
 
     // Populate Category and Supplier Filter Options
