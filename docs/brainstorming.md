@@ -1,6 +1,6 @@
 # Brainstorm: Garden Shop Inventory & Restocking Dashboard
 
-> Project-specific brainstorm, built from `brainstorming.md` (template) and `Garden_Shop_Inventory_Dashboard_Proposal.docx` (v1.0).
+> Project-specific brainstorm.
 > Purpose: give another person or agent session enough context to adapt `PRD.md`, `SPEC.md`, `AGENTS.md` and `CLAUDE.md` to this project, without implementing anything yet.
 
 ## How to use

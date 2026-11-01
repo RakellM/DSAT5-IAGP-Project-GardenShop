@@ -91,7 +91,10 @@ Grounded directly in the database records, the dashboard answers the 7 core exec
 
 #### C) Operational Reorder Recommendation Algorithm
 - Ordering only the deficit quantity would cause inventory to drop back below the safety threshold on the very next sale. The algorithm applies a 50% buffer over the reorder level:
-$$\text{Recommended Purchase Quantity} = (\text{reorder\_level} - \text{quantity\_on\_hand}) + (\text{reorder\_level} \times 0.5)$$
+
+```text
+Recommended Purchase Quantity = (reorder_level - quantity_on_hand) + (reorder_level * 0.5)
+```
 
 ---
 
@@ -139,4 +142,37 @@ Plotly
 - **Visualization:** Matplotlib, Seaborn
                                                                             
 ---    
+
+# Task 02
+
+[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-emerald)](https://rakellm.github.io/DSAT5-IAGP-Project-GardenShop/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-7%20Passed-brightgreen)](./tests/)
+
+Decision Support System (DSS) project for inventory monitoring, purchase screening, and stockout prevention at the Garden Shop online store. Developed with generative AI support (Process: Brainstorming → PRD → SPEC → TDD → Implementation).
+
+---
+
+## 🚀 Access the Online Dashboard (GitHub Pages)
+The dashboard is published and 100% interactive, with zero need for local installation:
+🔗 **[https://rakellm.github.io/DSAT5-IAGP-Project-GardenShop/](https://rakellm.github.io/DSAT5-IAGP-Project-GardenShop/)**
+
+---
+
+## 📂 Official Documentation (Task 02 Deliverables)
+
+1. 📋 **[PRD.md](./exercise/Task_02/PRD.md)**: Product Requirements Document: problem, personas, scope, business rules, and acceptance criteria.
+2. ⚙️ **[SPEC.md](./exercise/Task_02/SPEC.md)**: Software Specification: data contracts, formulas, modular architecture, balance sheet deduplication, and test cases.
+3. 🤖 **[AGENTS.md](./exercise/Task_02/AGENTS.md)**: Instructions for agents and developers, execution commands, and data governance.
+4. 💡 **[docs/BRAINSTORMING.md](./docs/BRAINSTORMING.md)**: Record of the AI ideation process, exploration, and critical evaluation of hypotheses.
+
+---
+
+## 📊 Preview Active Dashboard
+
+![Active Dashboard](./exercise/Task_02/dashboard_screenshot.png)
+
+
+
+
 
