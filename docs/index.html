@@ -173,7 +173,7 @@
         <span class="text-amber-600 text-lg">⚠️</span>
         <div class="text-xs text-amber-900 leading-relaxed">
           <strong class="font-bold">Procurement Alert:</strong> 
-          Supplier <span class="font-semibold underline">Ironwood Tools</span> supplies <em>Hand Cultivator</em> (deficit: 7 units, $24.50), but has <strong>no email registered in the database</strong>. Orders must be submitted via alternative channel or telephone.
+          Supplier <span class="font-semibold underline">Ironwood Tools</span> supplies <em>Hand Cultivator</em> (deficit: 7 units, $24.50), but has <strong>no email registered in the database</strong>. No contact email is registered — this supplier must be handled outside the automated flow.
         </div>
       </div>
       <button onclick="document.getElementById('vendorAlertBox').style.display='none'" class="text-amber-700 hover:text-amber-900 text-sm font-bold ml-4">✕</button>
@@ -291,6 +291,55 @@
     </section>
 
   </main>
+
+  <!-- PO PREVIEW MODAL (prototype only — no email is sent) -->
+  <div id="poModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" style="background:rgba(15,23,42,0.6);">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="bg-[#1B365D] text-white px-5 py-3.5 rounded-t-xl flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📄</span>
+          <h3 class="font-bold text-sm">Purchase Order Preview</h3>
+        </div>
+        <button onclick="closePoModal()" class="text-white/70 hover:text-white text-lg font-bold leading-none">✕</button>
+      </div>
+
+      <div class="bg-amber-50 border-b border-amber-200 px-5 py-2.5 flex items-start gap-2">
+        <span class="text-amber-600 text-sm">🧪</span>
+        <p class="text-[11px] text-amber-900 leading-relaxed">
+          <strong>Prototype dashboard.</strong> This is a preview only — no email is sent, and no order is placed. Connect a real email/ERP service to enable live purchasing.
+        </p>
+      </div>
+
+      <div class="p-5">
+        <div class="border border-slate-200 rounded-lg overflow-hidden">
+          <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 space-y-1.5 text-xs">
+            <div class="flex gap-2"><span class="text-slate-400 w-14 shrink-0 font-semibold">To:</span><span id="poTo" class="text-slate-700 font-mono"></span></div>
+            <div class="flex gap-2"><span class="text-slate-400 w-14 shrink-0 font-semibold">From:</span><span class="text-slate-700 font-mono">procurement@gardenshop.example</span></div>
+            <div class="flex gap-2"><span class="text-slate-400 w-14 shrink-0 font-semibold">Subject:</span><span id="poSubject" class="text-slate-800 font-semibold"></span></div>
+          </div>
+          <div class="px-4 py-4 text-xs text-slate-700 leading-relaxed space-y-3">
+            <p id="poGreeting"></p>
+            <p>Please accept our purchase order for the following item:</p>
+            <table class="w-full text-[11px] border border-slate-200 rounded">
+              <tbody class="divide-y divide-slate-100">
+                <tr><td class="bg-slate-50 px-3 py-1.5 font-semibold text-slate-500 w-1/3">Product</td><td id="poProduct" class="px-3 py-1.5"></td></tr>
+                <tr><td class="bg-slate-50 px-3 py-1.5 font-semibold text-slate-500">SKU</td><td id="poSku" class="px-3 py-1.5 font-mono"></td></tr>
+                <tr><td class="bg-slate-50 px-3 py-1.5 font-semibold text-slate-500">Quantity</td><td id="poQty" class="px-3 py-1.5"></td></tr>
+                <tr><td class="bg-slate-50 px-3 py-1.5 font-semibold text-slate-500">Unit Cost</td><td id="poUnitCost" class="px-3 py-1.5"></td></tr>
+                <tr><td class="bg-slate-50 px-3 py-1.5 font-semibold text-slate-500">Estimated Total</td><td id="poTotal" class="px-3 py-1.5 font-bold text-slate-900"></td></tr>
+              </tbody>
+            </table>
+            <p>Thank you,<br><span class="font-semibold">Garden Shop Procurement</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 pb-5 flex justify-end gap-2">
+        <button onclick="closePoModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded transition">Close</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- EMBEDDED DATA PAYLOAD (Fallback for local file:// execution & standalone bundling) -->
   <script id="embedded-data" type="application/json">
@@ -612,11 +661,11 @@
         const hasEmail = p.contact_email && p.contact_email !== 'MISSING';
         const vendorDisplay = hasEmail ? 
           `<span title="${p.contact_email}">${p.supplier_name}</span>` :
-          `<span class="text-amber-800 font-semibold" title="Missing Email!">${p.supplier_name} <span class="text-[10px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded">No Email</span></span>`;
+          `<span class="text-amber-800 font-semibold" title="No contact email on file">${p.supplier_name} <span class="text-[10px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded">No Email</span></span>`;
 
-        const mailtoAction = p.deficit_to_min > 0 && hasEmail ? 
-          `<a href="mailto:${p.contact_email}?subject=Purchase%20Order%20-%20Garden%20Shop%20(${encodeURIComponent(p.product_name)})&body=Hello%20${encodeURIComponent(p.supplier_name)},%0A%0APlease%20accept%20our%20purchase%20order%20for%20the%20following%20item:%0A-%20Product:%20${encodeURIComponent(p.product_name)}%20(SKU%20${p.product_id})%0A-%20Quantity:%20${p.suggested_po_units}%20units%0A%0AThank%20you,%0AGarden%20Shop%20Procurement" class="inline-block bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-semibold px-2 py-0.5 rounded transition">Draft PO</a>` :
-          (p.deficit_to_min > 0 ? `<button onclick="alert('Please call ${p.supplier_name} via telephone to place this order (no contact email on file).')" class="inline-block bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-semibold px-2 py-0.5 rounded transition">Call Vendor</button>` : `<span class="text-slate-300 text-[11px]">--</span>`);
+        const poAction = p.deficit_to_min > 0 ?
+          `<button onclick='openPoModal(${JSON.stringify({product_id:p.product_id, product_name:p.product_name, supplier_name:p.supplier_name, contact_email:p.contact_email, suggested_po_units:p.suggested_po_units, cost:p.cost, suggested_po_cost:p.suggested_po_cost}).replace(/'/g,"&#39;")})' class="inline-block bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-semibold px-2 py-0.5 rounded transition">Preview PO</button>` :
+          `<span class="text-slate-300 text-[11px]">--</span>`;
 
         tr.innerHTML = `
           <td class="py-2.5 px-3 text-slate-400 font-mono">#${p.product_id}</td>
@@ -631,7 +680,7 @@
           <td class="py-2.5 px-3 text-right font-mono text-blue-700 font-semibold">${p.suggested_po_units > 0 ? p.suggested_po_units + ' ($' + p.suggested_po_cost.toFixed(0) + ')' : '-'}</td>
           <td class="py-2.5 px-3 text-center font-mono font-medium">${p.units_sold}</td>
           <td class="py-2.5 px-3 text-center"><span class="${priorityBadgeClass} text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">${p.priority_tier}</span></td>
-          <td class="py-2.5 px-3 text-center">${mailtoAction}</td>
+          <td class="py-2.5 px-3 text-center">${poAction}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -817,6 +866,28 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    function openPoModal(p) {
+      const hasEmail = p.contact_email && p.contact_email !== 'MISSING' && p.contact_email !== '';
+      document.getElementById('poTo').textContent = hasEmail ? p.contact_email : '(no email on file — prototype only)';
+      document.getElementById('poSubject').textContent = `Purchase Order – Garden Shop (${p.product_name})`;
+      document.getElementById('poGreeting').textContent = `Hello ${p.supplier_name},`;
+      document.getElementById('poProduct').textContent = p.product_name;
+      document.getElementById('poSku').textContent = `#${p.product_id}`;
+      document.getElementById('poQty').textContent = `${p.suggested_po_units} units`;
+      document.getElementById('poUnitCost').textContent = `$${p.cost.toFixed(2)}`;
+      document.getElementById('poTotal').textContent = `$${p.suggested_po_cost.toFixed(2)}`;
+
+      const modal = document.getElementById('poModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePoModal() {
+      const modal = document.getElementById('poModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
 
     // Run on page load
