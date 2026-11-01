@@ -166,7 +166,12 @@ def get_kpi_summary(df_products: pd.DataFrame) -> dict:
     }
 
 def export_json_payload(db_path: str = None, output_file: str = None) -> str:
-    """Exports structured JSON for zero-server GitHub Pages execution."""
+    """Exports structured JSON for zero-server GitHub Pages execution.
+    
+    The generated payload includes a ``generated_at`` ISO-8601 timestamp so
+    the dashboard can display when the data was last refreshed.
+    """
+    from datetime import datetime, timezone
     df_products = load_products_master(db_path)
     kpis = get_kpi_summary(df_products)
     
@@ -190,6 +195,7 @@ def export_json_payload(db_path: str = None, output_file: str = None) -> str:
     ).reset_index().to_dict(orient='records')
     
     payload = {
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "kpis": kpis,
         "categories": cat_summary,
         "suppliers": sup_summary,
