@@ -8,7 +8,7 @@
 - **Project name:** Garden Shop Inventory Monitoring & Restocking Decision Support Dashboard
 - **Document version:** 1.0
 - **Status:** Approved
-- **Owner:** Analytics & Operations Engineering Team
+- **Owner:** Raquel Marques
 - **Date:** 2026-11-01
 
 ---

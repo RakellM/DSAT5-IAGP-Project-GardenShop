@@ -19,8 +19,19 @@
   - [4. Business Rules & Data Handling Logic](#4-business-rules--data-handling-logic)
   - [5. Dataset Limitations & Operational Impact](#5-dataset-limitations--operational-impact)
   - [6. Interactive Dashboard Architecture & UI Modules](#6-interactive-dashboard-architecture--ui-modules)
-- [Official Deliverable (.docx Word Proposal)](#official-deliverable-docx-word-proposal)
-- [Tech Stack](#tech-stack)
+  - [✔️Official Deliverable (.docx Word Proposal)](#official-deliverable-docx-word-proposal)
+  - [Tech Stack](#tech-stack)
+
+- [Task 02: Decision Support System (DSS) Dashboard](#task-02-decision-support-system-dss-dashboard)
+  - [Access the Online Dashboard (GitHub Pages)](#-access-the-online-dashboard-github-pages)
+  - [✔️Official Documentation (Task 02 Deliverables)](#-official-documentation-task-02-deliverables)
+  - [Preview Active Dashboard](#-preview-active-dashboard)
+
+- [Task 03: Analytics Copilot Skill for Olist Database (`analise-olist`)](#task-03)
+  - [Analytics Copilot Skill on the Olist E-Commerce Database](#analytics-copilot-skill-on-the-olist-e-commerce-database)
+    - [Key Capabilities Supported by the Skill](#-key-capabilities-supported-by-the-skill)
+  - [✔️Official Documentation (Task 03 Deliverables)](#-official-documentation-task-03-deliverables)
+
 
 
 ---
@@ -143,7 +154,7 @@ Plotly
                                                                             
 ---    
 
-# Task 02
+# Task 02: Decision Support System (DSS) Dashboard
 
 [![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-emerald)](https://rakellm.github.io/DSAT5-IAGP-Project-GardenShop/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
@@ -172,7 +183,35 @@ The dashboard is published and 100% interactive, with zero need for local instal
 
 ![Active Dashboard](./exercise/Task_02/dashboard_screenshot.png)
 
+---
 
+# Task 03
+
+[![Skill](https://img.shields.io/badge/Skill-analise--olist-purple)](./exercise/Task_03/skills/analise-olist/SKILL.md)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-5%20Passed-brightgreen)](./exercise/Task_03/skills/analise-olist/tests/)
+
+## Analytics Copilot Skill on the Olist E-Commerce Database
+While Tasks 01 and 02 focused on the Garden Shop inventory database, **Task 03 shifts to a large-scale marketplace dataset: the Brazilian Olist E-Commerce Database** (`data/olist/`), comprising ~100k real transactional orders, customer geographical locations, line items, and payments.
+
+The objective of Task 03 is to build an **Analytics Copilot Skill (`analise-olist`)** that enables AI assistants to investigate business questions through natural language, write/reuse Python code dynamically against the Olist CSV files, avoid Cartesian joins and duplicate calculations, and present verified, non-hardcoded results.
+
+### 🎯 Key Capabilities Supported by the Skill
+
+1. **Monthly Delivered Orders:** Calculates chronological order volume using `descSituacao == 'delivered'` anchored to order date `dtPedido`.
+2. **Top 5 Customer States (UF):** Ranks customer distribution by volume of delivered orders (SP, RJ, MG, RS, PR).
+3. **Average Ticket per Delivered Order:** Computes item price average ($\sum vlPreco / \text{distinct delivered orders}$), strictly excluding freight (`vlFrete`).
+4. **Dynamic Follow-Up Filtering:** Seamlessly recalculates all metrics when restricting time windows (e.g. 2017) or geographic filters (e.g. state of `SP`).
+5. **Edge Case Handling:** Formally handles zero-order periods (returns 0 orders and N/A average ticket) and flags questions outside schema scope (e.g. customer age).
+
+---
+
+## 📖 Official Documentation (Task 03 Deliverables)
+
+- 📘 **[Task 03 Detailed Guide & Reproduction (`exercise/Task_03/README.md`)](./exercise/Task_03/README.md)**: Full instructions on how to run tests, execute queries, and view verified outputs.
+- ⚙️ **[Official `SKILL.md`](./exercise/Task_03/skills/analise-olist/SKILL.md)**: Complete skill specification following the standard format (zero placeholders).
+- 📜 **[Execution Log & Evidence (`exercise/Task_03/execution_log.md`)](./exercise/Task_03/execution_log.md)**: Live terminal outputs and mathematical verifications for all core questions and follow-ups.
+- 📸 **[Copilot in Use Screenshots](./exercise/Task_03/screenshots/)**: Visual evidence of the agent executing live queries and explaining results.
 
 
 

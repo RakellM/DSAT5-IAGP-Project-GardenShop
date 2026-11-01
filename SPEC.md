@@ -10,7 +10,7 @@
 - **Specification version:** 1.0
 - **Status:** Approved
 - **Related PRD:** [`PRD.md`](./PRD.md)
-- **Approval owner:** Lead Data & Analytics Engineer
+- **Approval owner:** Raquel Marques
 - **Date:** 2026-11-01
 
 ### Allowed Statuses

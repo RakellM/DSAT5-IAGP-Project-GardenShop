@@ -1,0 +1,101 @@
+(base)PS C:\Users\kel_m\OneDrive\Project_Code> cd .\DSAT5-IAGP-Project-GardenShop\
+(base)PS C:\Users\kel_m\OneDrive\Project_Code\DSAT5-IAGP-Project-GardenShop> python -m unittest discover -s exercise/Task_03/skills/analise-olist/tests -p "test_*.py"
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 1.773s
+
+OK
+(base)PS C:\Users\kel_m\OneDrive\Project_Code\DSAT5-IAGP-Project-GardenShop> python exercise/Task_03/skills/analise-olist/scripts/analyze.py --data-dir data/olist --query monthly_orders --format text
+=== Olist Analytics Result ===
+Delivered orders in scope: 96,478
+
+Monthly Delivered Orders:
+  2016-09: 1
+  2016-10: 265
+  2016-12: 1
+  2017-01: 750
+  2017-02: 1,653
+  2017-03: 2,546
+  2017-04: 2,303
+  2017-05: 3,546
+  2017-06: 3,135
+  2017-07: 3,872
+  2017-08: 4,193
+  2017-09: 4,150
+  2017-10: 4,478
+  2017-11: 7,289
+  2017-12: 5,513
+  2018-01: 7,069
+  2018-02: 6,555
+  2018-03: 7,003
+  2018-04: 6,798
+  2018-05: 6,749
+  2018-06: 6,099
+  2018-07: 6,159
+  2018-08: 6,351
+(base)PS C:\Users\kel_m\OneDrive\Project_Code\DSAT5-IAGP-Project-GardenShop> python exercise/Task_03/skills/analise-olist/scripts/analyze.py --data-dir data/olist --query top_ufs --top-n 5 --format text
+=== Olist Analytics Result ===
+Delivered orders in scope: 96,478
+
+Top 5 Customer States (UF):
+  #1 SP: 40,501 orders
+  #2 RJ: 12,350 orders
+  #3 MG: 11,354 orders
+  #4 RS: 5,345 orders
+  #5 PR: 4,923 orders
+(base)PS C:\Users\kel_m\OneDrive\Project_Code\DSAT5-IAGP-Project-GardenShop> python exercise/Task_03/skills/analise-olist/scripts/analyze.py --data-dir data/olist --query average_ticket --format text
+=== Olist Analytics Result ===
+Delivered orders in scope: 96,478
+
+Average Ticket per Delivered Order:
+  Average Ticket: R$ 137.04
+  Total Item Price: R$ 13,221,498.11
+  Orders with items coverage: 100.0%
+(base)PS C:\Users\kel_m\OneDrive\Project_Code\DSAT5-IAGP-Project-GardenShop> python exercise/Task_03/skills/analise-olist/scripts/analyze.py --data-dir data/olist --query all --start-date 2017-01-01 --end-date 2017-12-31 --uf SP --format text
+=== Olist Analytics Result ===
+Delivered orders in scope: 17,071
+
+Monthly Delivered Orders:
+  2017-01: 283
+  2017-02: 601
+  2017-03: 966
+  2017-04: 873
+  2017-05: 1,363
+  2017-06: 1,284
+  2017-07: 1,543
+  2017-08: 1,665
+  2017-09: 1,576
+  2017-10: 1,723
+  2017-11: 2,899
+  2017-12: 2,295
+
+Top 5 Customer States (UF):
+  #1 SP: 17,071 orders
+
+Average Ticket per Delivered Order:
+  Average Ticket: R$ 125.14
+  Total Item Price: R$ 2,136,258.96
+  Orders with items coverage: 100.0%
+(base)PS C:\Users\kel_m\OneDrive\Project_Code\DSAT5-IAGP-Project-GardenShop> python exercise/Task_03/skills/analise-olist/scripts/analyze.py --data-dir data/olist --query all --start-date 2025-01-01 --end-date 2025-01-31
+{
+  "metadata": {
+    "data_dir": "data/olist",
+    "query": "all",
+    "filters": {
+      "start_date": "2025-01-01",
+      "end_date": "2025-01-31",
+      "uf": null
+    },
+    "delivered_orders_in_scope": 0
+  },
+  "monthly_orders": [],
+  "top_ufs": [],
+  "average_ticket": {
+    "delivered_orders_count": 0,
+    "orders_with_items_count": 0,
+    "coverage_percentage": 0.0,
+    "total_items_price": 0.0,
+    "average_ticket": null,
+    "status": "NOT_APPLICABLE"
+  }
+}
