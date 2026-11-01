@@ -6,9 +6,6 @@
 
 ---
 
-# Task 01
-
-
 ## 📌 Table of Contents
 - [Project Overview](#project-overview)
 - [Relational Dataset](#relational-dataset)
