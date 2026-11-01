@@ -14,6 +14,7 @@ exercise/Task_03/
 └── skills/
     └── analise-olist/
         ├── SKILL.md                       # Official skill specification (en-US)
+        ├── screenshots/                   # saved screenshots of the skill being used
         ├── references/
         │   ├── business_rules.md          # Business definitions, formulas & join rules
         │   └── schema_guide.md            # Schema dictionary, relations & foreign keys
@@ -121,3 +122,42 @@ python exercise/Task_03/skills/analise-olist/scripts/analyze.py --data-dir data/
    *Behavior:* For questions on fields not present in the database (e.g. customer age, demographics), the copilot identifies missing attributes in `cliente.csv` and reports that the query cannot be answered.
 
 For complete execution logs and raw JSON outputs, see [`exercise/Task_03/execution_log.md`](execution_log.md).
+
+
+---
+
+## 6. `SKILL.md` being used
+
+### Question 1: 
+
+> "How many delivered orders were placed in each month?"
+
+![Q1-1.png](./screenshots/Q1-1.png)
+![Q1-2.png](./screenshots/Q1-2.png)
+
+### Question 2:
+
+> "What are the five customer UFs with the most delivered orders?"
+
+![Q2.png](./screenshots/Q2.png)
+
+### Question 3:
+
+> "What was the average ticket of item prices per delivered order, excluding freight?"
+
+![Q3.png](./screenshots/Q3.png)
+
+### Question 4: *Test Dynamic Follow-up Filter*
+
+> "Now restrict the average ticket and monthly order count to the state of SP during 2017."
+
+![Q4-1.png](./screenshots/Q4-1.png)
+![Q4-2.png](./screenshots/Q4-2.png)
+
+### Question 5: *Test Edge Case / Out of Scope*
+
+> "What was the average ticket in January 2025?" or "What is the average customer age?"
+
+![Q5-1.png](./screenshots/Q5-1.png)
+![Q5-2.png](./screenshots/Q5-2.png)
+

@@ -13,6 +13,8 @@
 - [Project Overview](#project-overview)
 - [Relational Dataset](#relational-dataset)
 - [Task 01: Dashboard Proposal & Strategic Inventory Diagnosis](#task-01-dashboard-proposal--strategic-inventory-diagnosis)
+- [Task 02: Decision Support System (DSS) Dashboard](#task-02)
+- [Task 03: Analytics Copilot Skill for Olist Database (`analise-olist`)](#task-03)
   - [1. Dashboard Objective and Business Needs Addressed](#1-dashboard-objective-and-business-needs-addressed)
   - [2. Answers to Management's 7 Key Strategic Questions](#2-answers-to-managements-7-key-strategic-questions)
   - [3. Key Performance Indicators (KPIs) & Business Justifications](#3-key-performance-indicators-kpis--business-justifications)
@@ -171,6 +173,37 @@ The dashboard is published and 100% interactive, with zero need for local instal
 ## 📊 Preview Active Dashboard
 
 ![Active Dashboard](./exercise/Task_02/dashboard_screenshot.png)
+
+---
+
+# Task 03
+
+[![Skill](https://img.shields.io/badge/Skill-analise--olist-purple)](./exercise/Task_03/skills/analise-olist/SKILL.md)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-5%20Passed-brightgreen)](./exercise/Task_03/skills/analise-olist/tests/)
+
+### Analytics Copilot Skill on the Olist E-Commerce Database
+
+While Tasks 01 and 02 focused on the Garden Shop inventory database, **Task 03 shifts to a large-scale marketplace dataset: the Brazilian Olist E-Commerce Database** (`data/olist/`), comprising ~100k real transactional orders, customer geographical locations, line items, and payments.
+
+The objective of Task 03 is to build an **Analytics Copilot Skill (`analise-olist`)** that enables AI assistants to investigate business questions through natural language, write/reuse Python code dynamically against the Olist CSV files, avoid Cartesian joins and duplicate calculations, and present verified, non-hardcoded results.
+
+#### 🎯 Key Capabilities Supported by the Skill
+1. **Monthly Delivered Orders:** Calculates chronological order volume using `descSituacao == 'delivered'` anchored to order date `dtPedido`.
+2. **Top 5 Customer States (UF):** Ranks customer distribution by volume of delivered orders (SP, RJ, MG, RS, PR).
+3. **Average Ticket per Delivered Order:** Computes item price average ($\sum vlPreco / \text{distinct delivered orders}$), strictly excluding freight (`vlFrete`).
+4. **Dynamic Follow-Up Filtering:** Seamlessly recalculates all metrics when restricting time windows (e.g. 2017) or geographic filters (e.g. state of `SP`).
+5. **Edge Case Handling:** Formally handles zero-order periods (returns 0 orders and N/A average ticket) and flags questions outside schema scope (e.g. customer age).
+
+---
+
+### 📖 Task 03 Documentation & Deliverables
+
+- 📘 **[Task 03 Detailed Guide & Reproduction (`exercise/Task_03/README.md`)](./exercise/Task_03/README.md)**: Full instructions on how to run tests, execute queries, and view verified outputs.
+- ⚙️ **[Official `SKILL.md`](./exercise/Task_03/skills/analise-olist/SKILL.md)**: Complete skill specification following the standard format (zero placeholders).
+- 📜 **[Execution Log & Evidence (`exercise/Task_03/execution_log.md`)](./exercise/Task_03/execution_log.md)**: Live terminal outputs and mathematical verifications for all core questions and follow-ups.
+- 📸 **[Copilot in Use Screenshots](./exercise/Task_03/screenshots/)**: Visual evidence of the agent executing live queries and explaining results.
+
 
 
 
